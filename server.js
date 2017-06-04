@@ -4,6 +4,9 @@ var fs = require("fs");
 var exec = require("child_process").exec;
 var execFile = require("child_process").execFile;
 
+var handlebars = require('handlebars');
+var fooJson = require('foo.json');
+
 var download = function(url, dest, cb) {
 	var file = fs.createWriteStream(dest);
 	var proto = https;
@@ -218,21 +221,27 @@ function saveSolutionSubmission(request) {
 
 
 http.createServer(function (request, response) {
-	response.writeHead(200, {'Content-Type': 'text/html'});
-	response.write('<html><head></head><body>');
-	console.log('request = [' + request.method + ']: ' + request.url);
-	if(request.method === 'POST' && request.url === '/upload_submission') {
-		saveSolutionSubmission(request);
-		response.end();
+	try {
+		response.writeHead(200, {'Content-Type': 'text/html'});
+		response.write('<html><head></head><body>');
+		console.log('request = [' + request.method + ']: ' + request.url);
+		if(request.method === 'POST' && request.url === '/upload_submission') {
+			saveSolutionSubmission(request);
+			response.end();
+		}
+		else if(request.method === 'GET' && request.url.startsWith('/results/')) {
+			setTimeout(function() {
+				getResults(request, response)
+			}, 1000); //hack to wait for results file to be written
+		}
+		else if(request.method === 'GET' && request.url.startsWith('/leaderboard')) {
+			getLeaderboard(response);
+		}
 	}
-	else if(request.method === 'GET' && request.url.startsWith('/results/')) {
-		setTimeout(function() {
-			getResults(request, response)
-		}, 1000); //hack to wait for results file to be written
+	catch(ex) {
+		response.end(ex);
 	}
-	else if(request.method === 'GET' && request.url.startsWith('/leaderboard')) {
-		getLeaderboard(response);
-	}
+	
    //debugger;
 }).listen(8081);
 
